@@ -14,6 +14,9 @@
               :showFloatingLabel="false"
               density="compact"
               searchLabel="Search Opponents"
+              :opponentOf="battleTag"
+              :season="selectedSeasonId"
+              :gateway="gateway"
               @playerFound="playerFound"
               @searchCleared="searchCleared"
             />
@@ -256,11 +259,13 @@ import { computed, defineComponent, onMounted, ref, watch } from "vue";
 import { onBeforeRouteLeave } from "vue-router";
 import { useI18n } from "vue-i18n";
 import { loadActiveGameModes, activeGameModesWithAll, type IGameModeBrief } from "@/composables/GameModesMixin";
+import type { Gateways } from "@/store/ranking/types";
 import MatchesGrid from "@/components/matches/MatchesGrid.vue";
 import { EGameMode, ERaceEnum, type Match, type PlayerInTeam, type Team } from "@/store/types";
 import PlayerSearch from "@/components/common/PlayerSearch.vue";
 import { usePlayerStore } from "@/store/player/store";
 import { useRankingStore } from "@/store/ranking/store";
+import { useRootStateStore } from "@/store/rootState/store";
 import HeroSelect from "@/components/matches/HeroSelect.vue";
 import { useCommonStore } from "@/store/common/store";
 import { getAsset } from "@/helpers/url-functions";
@@ -292,6 +297,7 @@ export default defineComponent({
     const { t } = useI18n();
     const playerStore = usePlayerStore();
     const rankingsStore = useRankingStore();
+    const rootStateStore = useRootStateStore();
     const commonStore = useCommonStore();
     const tableOptionsStore = useTableOptionsStore();
     const isLoadingMatches = ref<boolean>(false);
@@ -299,6 +305,8 @@ export default defineComponent({
     const hasResolvedInitialMatches = ref<boolean>(false);
 
     const battleTag = computed<string>(() => decodeURIComponent(props.id));
+    const selectedSeasonId = computed<number>(() => playerStore.selectedSeason?.id ?? -1);
+    const gateway = computed<Gateways>(() => rootStateStore.gateway);
     const totalMatches = computed<number>(() => playerStore.totalMatches);
     const matches = computed<Match[]>(() => playerStore.matches);
     const selectedHeroes = computed<number[]>(() => playerStore.selectedHeroes);
@@ -642,6 +650,8 @@ export default defineComponent({
       matches,
       totalMatches,
       battleTag,
+      selectedSeasonId,
+      gateway,
       onPageChanged,
       showHeroIcons,
       showRelativeStartTime,

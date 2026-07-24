@@ -37,3 +37,10 @@ export type Mmr = {
   min: number;
   max: number;
 };
+
+// One result of the matches/search-opponents endpoint: a player who shares
+// finished matches with the searched player, and how many they share.
+export type OpponentInfo = {
+  battleTag: string;
+  matchCount: number;
+};
