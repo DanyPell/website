@@ -524,6 +524,15 @@ const en = {
     calibrating: "Calibrating",
   },
 
+  components_player_tabs_matchhistorytab: {
+    noModeMatchesVsOpponent: "No {mode} matches against this opponent",
+  },
+
+  components_common_playersearch: {
+    matchCount: "no matches | {n} match | {n} matches",
+    noModeMatches: "No {mode} matches",
+  },
+
   proxies: {
     eu_east3_via_eu_central2: "EU East 3 via EU Central 2",
     asia_east_via_cn_east: "Asia East via CN East",

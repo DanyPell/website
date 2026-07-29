@@ -96,14 +96,17 @@ export default class MatchService {
   }
 
   // Searches the players someone shares matches with in the given season,
-  // ordered by shared match count. An empty search returns the most played opponents.
+  // ordered by shared match count. An empty search returns the most played
+  // opponents. matchCount is scoped to the game mode (all modes when UNDEFINED);
+  // opponents without matches in that mode still appear, with matchCount 0.
   public static async searchOpponents(
     battleTag: string,
     search: string,
     season: number,
     gateway: Gateways,
+    gameMode: EGameMode = EGameMode.UNDEFINED,
   ): Promise<OpponentInfo[]> {
-    const url = `${API_URL}api/matches/search-opponents?playerId=${encodeURIComponent(battleTag)}&search=${encodeURIComponent(search)}&season=${season}&gateWay=${gateway}`;
+    const url = `${API_URL}api/matches/search-opponents?playerId=${encodeURIComponent(battleTag)}&search=${encodeURIComponent(search)}&season=${season}&gateWay=${gateway}&gameMode=${gameMode}`;
 
     const response = await fetch(url);
     if (!response.ok) return [];

@@ -31,11 +31,15 @@
       @keydown.enter.prevent="submitSearch"
     >
       <!-- Same look as the global search results: round avatar, battleTag on
-           top and a second line underneath (here the shared game count). -->
+           top (its #number dimmed) and a second line underneath (here the
+           shared match count). -->
       <template v-slot:item="{ props: itemProps, item }">
-        <v-list-item :prepend-avatar="getAvatarUrlFor(item.raw.battleTag)" v-bind="itemProps">
-          <v-list-item-subtitle v-if="item.raw.matchCount">
-            {{ item.raw.matchCount }} {{ item.raw.matchCount === 1 ? "game" : "games" }}
+        <v-list-item :prepend-avatar="getAvatarUrlFor(item.raw.battleTag)" v-bind="{ ...itemProps, title: undefined }">
+          <v-list-item-title>
+            {{ battleTagName(item.raw.battleTag) }}<span class="text-medium-emphasis">{{ battleTagNumber(item.raw.battleTag) }}</span>
+          </v-list-item-title>
+          <v-list-item-subtitle v-if="item.raw.matchCount !== undefined">
+            {{ matchCountText(item.raw.matchCount) }}
           </v-list-item-subtitle>
         </v-list-item>
       </template>
@@ -51,8 +55,10 @@ import MatchService from "@/services/MatchService";
 import PersonalSettingsService from "@/services/PersonalSettingsService";
 import { ProfilePicture } from "@/store/personalSettings/types";
 import { getAvatarUrl } from "@/helpers/url-functions";
-import { EAvatarCategory } from "@/store/types";
+import { EAvatarCategory, EGameMode } from "@/store/types";
 import { Gateways } from "@/store/ranking/types";
+import { useRankingStore } from "@/store/ranking/store";
+import { useI18n } from "vue-i18n";
 
 import { mdiMagnify } from "@mdi/js";
 
@@ -115,8 +121,17 @@ export default defineComponent({
       // 0 = GateWay.Undefined on the backend, i.e. no gateway filter.
       default: 0,
     },
+    // Scopes each suggestion's match count to one game mode. Opponents without
+    // matches in that mode are still suggested, with a "No <mode> matches" line.
+    gameMode: {
+      type: Number as PropType<EGameMode>,
+      required: false,
+      default: EGameMode.UNDEFINED,
+    },
   },
   setup: (props, context) => {
+    const { t } = useI18n();
+    const rankingStore = useRankingStore();
     const input = ref<string>("");
     const isLoading = ref<boolean>(false);
     const SEARCH_DELAY = 500;
@@ -132,7 +147,7 @@ export default defineComponent({
     async function dispatchSearch(val: string) {
       const token = ++searchToken;
       const players: SearchedPlayer[] = isOpponentSearch.value
-        ? await MatchService.searchOpponents(props.opponentOf, val, props.season, props.gateway)
+        ? await MatchService.searchOpponents(props.opponentOf, val, props.season, props.gateway, props.gameMode)
         : await ProfileService.searchPlayer(val.toLowerCase());
       if (token !== searchToken) return;
       searchedPlayers.value = players;
@@ -140,9 +155,9 @@ export default defineComponent({
       loadProfilePictures(players.map((player) => player.battleTag));
     }
 
-    // Keep opponent results in sync with the table when the season or gateway
-    // changes: re-run a typed search, otherwise drop the now-stale list.
-    watch(() => [props.season, props.gateway], () => {
+    // Keep opponent results in sync with the table when the season, gateway or
+    // game mode changes: re-run a typed search, otherwise drop the now-stale list.
+    watch(() => [props.season, props.gateway, props.gameMode], () => {
       if (!isOpponentSearch.value) return;
       const current = input.value && input.value !== selected.value ? input.value : "";
       if (current.length >= minSearchLength.value) {
@@ -178,6 +193,33 @@ export default defineComponent({
         hash = (hash * 31 + battleTag.charCodeAt(i)) | 0;
       }
       return getAvatarUrl(EAvatarCategory.STARTER, (Math.abs(hash) % 5) + 1, false);
+    }
+
+    // "Rampage#2131" -> "Rampage" + "#2131", so the number can be dimmed.
+    function battleTagName(battleTag: string): string {
+      const hashIndex = battleTag.lastIndexOf("#");
+      return hashIndex === -1 ? battleTag : battleTag.slice(0, hashIndex);
+    }
+
+    function battleTagNumber(battleTag: string): string {
+      const hashIndex = battleTag.lastIndexOf("#");
+      return hashIndex === -1 ? "" : battleTag.slice(hashIndex);
+    }
+
+    // Same display name the mode filter uses (translation first, API name as fallback).
+    const searchModeName = computed<string>(() => {
+      if (props.gameMode === EGameMode.UNDEFINED) return "";
+      const mode = rankingStore.activeModes.find((activeMode) => activeMode.id === props.gameMode);
+      return mode ? (t(`gameModes.${EGameMode[props.gameMode]}`) || mode.name) : "";
+    });
+
+    // The count is scoped to the active mode filter; a zero says which mode is
+    // empty, so a suggestion never looks like it has no shared matches at all.
+    function matchCountText(count: number): string {
+      if (count === 0 && searchModeName.value) {
+        return t("components_common_playersearch.noModeMatches", { mode: searchModeName.value });
+      }
+      return t("components_common_playersearch.matchCount", count);
     }
 
     watch(selected, onSelect);
@@ -238,6 +280,9 @@ export default defineComponent({
       isLoading,
       searchedPlayers,
       getAvatarUrlFor,
+      battleTagName,
+      battleTagNumber,
+      matchCountText,
       clearSearch,
       submitSearch,
     };

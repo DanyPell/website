@@ -17,6 +17,7 @@
               :opponentOf="battleTag"
               :season="selectedSeasonId"
               :gateway="gateway"
+              :gameMode="selectedGameMode"
               @playerFound="playerFound"
               @searchCleared="searchCleared"
             />
@@ -243,6 +244,7 @@
       v-model="matches"
       :total-matches="totalMatches"
       :items-per-page="50"
+      :empty-text="matchesEmptyText"
       :always-left-name="battleTag"
       only-show-enemy
       :is-player-profile="true"
@@ -307,6 +309,7 @@ export default defineComponent({
     const battleTag = computed<string>(() => decodeURIComponent(props.id));
     const selectedSeasonId = computed<number>(() => playerStore.selectedSeason?.id ?? -1);
     const gateway = computed<Gateways>(() => rootStateStore.gateway);
+    const selectedGameMode = computed<EGameMode>(() => playerStore.profileMatchesGameMode);
     const totalMatches = computed<number>(() => playerStore.totalMatches);
     const matches = computed<Match[]>(() => playerStore.matches);
     const selectedHeroes = computed<number[]>(() => playerStore.selectedHeroes);
@@ -526,6 +529,13 @@ export default defineComponent({
       return ((opponentWins.value / matches.value.length) * 100).toFixed(1);
     });
 
+    // With an opponent and a mode filter both active, an empty result deserves
+    // a more specific message than the grid's generic "no matches found".
+    const matchesEmptyText = computed<string | undefined>(() =>
+      playerStore.opponentTag && selectedGameMode.value !== EGameMode.UNDEFINED
+        ? t("components_player_tabs_matchhistorytab.noModeMatchesVsOpponent", { mode: selectedGameModeName.value })
+        : undefined);
+
     function setSelectedGameModeForSearch(mode: IGameModeBrief): void {
       const gameMode = Number.isNaN(mode.id) ? EGameMode.UNDEFINED : mode.id;
       playerStore.SET_PROFILE_MATCHES_GAME_MODE(gameMode);
@@ -652,6 +662,8 @@ export default defineComponent({
       battleTag,
       selectedSeasonId,
       gateway,
+      selectedGameMode,
+      matchesEmptyText,
       onPageChanged,
       showHeroIcons,
       showRelativeStartTime,
