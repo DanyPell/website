@@ -529,6 +529,12 @@ const en = {
   },
 
   components_common_playersearch: {
+    searchLabel: "Search BattleTag",
+    typeToSearch: "Type to search",
+    typeAtLeast3Letters: "Type at least 3 letters",
+    loading: "Loading...",
+    noPlayerFound: "No player found",
+    noOpponentsFound: "No opponents found",
     matchCount: "no matches | {n} match | {n} matches",
     noModeMatches: "No {mode} matches",
   },

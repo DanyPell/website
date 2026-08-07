@@ -7,8 +7,8 @@
       :class="classes"
       menu-icon=""
       :append-inner-icon="mdiMagnify"
-      :label="showFloatingLabel ? searchLabel : undefined"
-      :placeholder="showFloatingLabel ? undefined : searchLabel"
+      :label="showFloatingLabel ? label : undefined"
+      :placeholder="showFloatingLabel ? undefined : label"
       :persistent-placeholder="!showFloatingLabel"
       :single-line="!showFloatingLabel"
       :density="density"
@@ -98,10 +98,12 @@ export default defineComponent({
       required: false,
       default: "default",
     },
+    // Empty = the localized "Search BattleTag" default (see `label` below;
+    // a prop default cannot call `t()`).
     searchLabel: {
       type: String,
       required: false,
-      default: "Search BattleTag",
+      default: "",
     },
     // When set to a battleTag, only players sharing matches with it are searched
     // (scoped to season/gateway), so no result ever leads to an empty match list.
@@ -143,6 +145,7 @@ export default defineComponent({
 
     const isOpponentSearch = computed<boolean>(() => !!props.opponentOf);
     const minSearchLength = computed<number>(() => (isOpponentSearch.value ? 1 : 3));
+    const label = computed<string>(() => props.searchLabel || t("components_common_playersearch.searchLabel"));
 
     async function dispatchSearch(val: string) {
       const token = ++searchToken;
@@ -264,18 +267,23 @@ export default defineComponent({
 
     const noDataText = computed<string>(() => {
       if (!input.value || input.value.length < minSearchLength.value) {
-        return isOpponentSearch.value ? "Type to search" : "Type at least 3 letters";
+        return isOpponentSearch.value
+          ? t("components_common_playersearch.typeToSearch")
+          : t("components_common_playersearch.typeAtLeast3Letters");
       }
       if (isLoading.value) {
-        return "Loading...";
+        return t("components_common_playersearch.loading");
       }
-      return isOpponentSearch.value ? "No opponents found" : "No player found";
+      return isOpponentSearch.value
+        ? t("components_common_playersearch.noOpponentsFound")
+        : t("components_common_playersearch.noPlayerFound");
     });
 
     return {
       mdiMagnify,
       selected,
       input,
+      label,
       noDataText,
       isLoading,
       searchedPlayers,
