@@ -536,6 +536,7 @@ const en = {
     noPlayerFound: "No player found",
     noOpponentsFound: "No opponents found",
     matchCount: "no matches | {n} match | {n} matches",
+    record: "{wins}W - {losses}L",
     noModeMatches: "No {mode} matches",
   },
 

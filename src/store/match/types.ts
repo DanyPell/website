@@ -39,8 +39,11 @@ export type Mmr = {
 };
 
 // One result of the matches/search-opponents endpoint: a player who shares
-// finished matches with the searched player, and how many they share.
+// finished matches with the searched player, how many they share, and the
+// searched player's record across them (allies share the same result).
 export type OpponentInfo = {
   battleTag: string;
   matchCount: number;
+  wins: number;
+  losses: number;
 };

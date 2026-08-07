@@ -39,7 +39,7 @@
             {{ battleTagName(item.raw.battleTag) }}<span class="text-medium-emphasis">{{ battleTagNumber(item.raw.battleTag) }}</span>
           </v-list-item-title>
           <v-list-item-subtitle v-if="item.raw.matchCount !== undefined">
-            {{ matchCountText(item.raw.matchCount) }}
+            {{ subtitleText(item.raw) }}
           </v-list-item-subtitle>
         </v-list-item>
       </template>
@@ -68,6 +68,8 @@ type SearchedPlayer = {
   battleTag: string;
   // Only set when searching within a player's match history.
   matchCount?: number;
+  wins?: number;
+  losses?: number;
 };
 
 export default defineComponent({
@@ -216,13 +218,19 @@ export default defineComponent({
       return mode ? (t(`gameModes.${EGameMode[props.gameMode]}`) || mode.name) : "";
     });
 
-    // The count is scoped to the active mode filter; a zero says which mode is
-    // empty, so a suggestion never looks like it has no shared matches at all.
-    function matchCountText(count: number): string {
+    // The count and record are scoped to the active mode filter; a zero says
+    // which mode is empty, so a suggestion never looks like it has no shared
+    // matches at all.
+    function subtitleText(player: SearchedPlayer): string {
+      const count = player.matchCount ?? 0;
       if (count === 0 && searchModeName.value) {
         return t("components_common_playersearch.noModeMatches", { mode: searchModeName.value });
       }
-      return t("components_common_playersearch.matchCount", count);
+      const countText = t("components_common_playersearch.matchCount", count);
+      if (count === 0 || player.wins === undefined || player.losses === undefined) {
+        return countText;
+      }
+      return `${countText} · ${t("components_common_playersearch.record", { wins: player.wins, losses: player.losses })}`;
     }
 
     watch(selected, onSelect);
@@ -290,7 +298,7 @@ export default defineComponent({
       getAvatarUrlFor,
       battleTagName,
       battleTagNumber,
-      matchCountText,
+      subtitleText,
       clearSearch,
       submitSearch,
     };
